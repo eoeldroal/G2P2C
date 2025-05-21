@@ -106,7 +106,7 @@ class StateRequest(BaseModel):
     # JavaScript에서 current_minute_abs를 보내지 않는다는 가정하에 Pydantic 모델은 이전 상태 유지
     history: List[List[float]] = Field(..., description="길이 12의 리스트, 각 요소는 [혈당(mg/dL), 이전 인슐린 액션(U/h)].")
     hour: float = Field(..., description="현재 시간 (0-23 사이의 실수 또는 정수).")
-    meal: Optional[float] = Field(0.0, description="현재 스텝의 식사량 (탄수화물 g, 없으면 0.0).")
+    meal: Optional[float] = Field(0.0, description="실시간 모드에서는 사용하지 않으며 항상 0.0을 보냄.")
 
 class ActionResponse(BaseModel):
     insulin_action_U_per_h: float = Field(..., description="0.0~5.0 U/h 사이의 실수")
@@ -150,6 +150,7 @@ def predict_action(req: StateRequest):
         current_cgm_raw = req.history[-1][0]
         previous_insulin_action_raw = req.history[-1][1]
         current_hour_raw = req.hour # JavaScript에서 받은 현재 시간(시)
+        # meal 값은 실시간 모드에서 사용하지 않는다. 항상 0.0이 전달된다.
         current_meal_raw = req.meal if req.meal is not None else 0.0
 
         print(f"INFO:     [LOG_MAIN_RAW_INPUTS_TO_STATESPACE] Raw inputs for StateSpace.update(): "

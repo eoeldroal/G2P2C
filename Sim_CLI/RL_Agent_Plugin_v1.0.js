@@ -2,7 +2,8 @@
 // Version: 1.0.0 (Specification for G2P2C Agent Applied)
 // Changes:
 // - Implemented 5-minute interval logic for API communication and history.
-// - Added 'hour' and 'meal' data to agent state.
+// - Added 'hour' data to agent state. The 'meal' field is fixed to 0.0 and
+//   ignored by the server (no meal announcements in realtime mode).
 // - CGM history stores the last value of each 5-minute interval.
 // - Insulin history stores the U/h rate applied during the previous 5-minute interval.
 // - Insulin action from agent is applied consistently over the 5-minute interval.
@@ -77,7 +78,7 @@ function runIteration(subjObject, sensorSigArray, nextMealObject, nextExerciseOb
     var currentMinuteAbs = NaN; // Absolute minutes from simulation start
     var currentCGM = NaN;
     var currentHour = NaN; // Hour of the day (0-23)
-    var currentMeal_g = 0.0; // Meal in grams for the current 5-min decision point
+    var currentMeal_g = 0.0; // Meal field is unused; always 0.0
 
     // --- 1. 시간 및 현재 CGM 값 가져오기 (매분 실행) ---
     if (timeObject && typeof timeObject === 'object' && timeObject.minutesPastSimStart !== undefined && isFinite(timeObject.minutesPastSimStart)) {
@@ -119,18 +120,14 @@ function runIteration(subjObject, sensorSigArray, nextMealObject, nextExerciseOb
     if (currentMinuteAbs % 5 === 0) {
         debugLog += "\n--- 5-Minute Interval Boundary (Minute: " + currentMinuteAbs + ") ---";
 
-        // 3a. 현재 시간(hour) 및 식사량(meal) 정보 추출
+        // 3a. 현재 시간(hour) 정보 추출
         currentHour = Math.floor(timeObject.minutesPastMidnight / 60) % 24;
         debugLog += "\n Current Hour: " + currentHour;
 
-        // 식사량 정보: 현재 5분 간격 시작 시점에 active한 식사 (g 단위)
-        // modelInputsToModObject.fullMealCarbMgExpectedAtStart: 식사 시작 시점에만 해당 식사의 총 탄수화물량(mg) 표시
-        currentMeal_g = (modelInputsToModObject.fullMealCarbMgExpectedAtStart || 0) / 1000.0;
-        if(currentMeal_g > 0) {
-            debugLog += "\n Meal starting/active: " + currentMeal_g.toFixed(2) + " g";
-        } else {
-            debugLog += "\n No meal starting at this 5-min interval.";
-        }
+        // 실시간 추론에서는 meal announcement 기능을 사용하지 않는다.
+        // 서버는 항상 0.0을 받도록 기대하므로 여기에서도 고정값을 사용한다.
+        currentMeal_g = 0.0;
+        debugLog += "\n Meal announcement disabled - sending 0.0";
 
 
         // 3b. 이력 배열 업데이트 (5분 간격 데이터)
@@ -235,7 +232,7 @@ function prepareAgentState(bgHist, insHist, currentHour, currentMeal_g, timeObj,
     var state = {
         "history": historyForAgent,
         "hour": currentHour,       // 현재 시간 (0-23)
-        "meal": currentMeal_g      // 현재 식사량 (g)
+        "meal": currentMeal_g      // 실시간 모드에서는 항상 0.0 (무시됨)
     };
 
     if (USE_FEAT_VECTOR) { // 현재 명세서에서는 hour, meal을 직접 사용하므로 이 부분은 선택적
