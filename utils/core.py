@@ -1,3 +1,4 @@
+from pathlib import Path
 import scipy.signal
 import numpy as np
 import logging
@@ -7,22 +8,39 @@ import warnings
 import math
 import torch
 
+try:
+    from Sim_CLI.dmms_env import DmmsEnv
+except Exception:
+    DmmsEnv = None
+
 
 def get_env(args, patient_name='adult#001', env_id='simglucose-adult1-v0', custom_reward=None, seed=None):
+    """환경 생성 헬퍼."""
+    if getattr(args, 'sim', 'simglucose') == 'dmms' and DmmsEnv is not None:
+        return DmmsEnv(
+            api_url=getattr(args, 'dmms_api_url', 'http://127.0.0.1:5000'),
+            exe=Path(getattr(args, 'dmms_exe', '')),
+            cfg=Path(getattr(args, 'dmms_cfg', '')),
+            log_path=Path(getattr(args, 'dmms_log', 'dmms_log.txt')),
+            results_root=Path(getattr(args, 'dmms_results', 'dmms_results')),
+        )
+
     register(
         id=env_id,
         entry_point='utils.extended_T1DSimEnv:T1DSimEnv',  # simglucose.envs:T1DSimEnv
         kwargs={'patient_name': patient_name,
                 'reward_fun': custom_reward,
-                'seed':seed,
+                'seed': seed,
                 'args': args}
     )
     env = gym.make(env_id)
-    env_conditions = {'insulin_min': env.action_space.low, 'insulin_max': env.action_space.high,
-                      'cgm_low': env.observation_space.low, 'cgm_high': env.observation_space.high}
+    env_conditions = {
+        'insulin_min': env.action_space.low,
+        'insulin_max': env.action_space.high,
+        'cgm_low': env.observation_space.low,
+        'cgm_high': env.observation_space.high,
+    }
     logging.info(env_conditions)
-    # print("Experiment running for {}, creating env {}.".format(patient_name, env_id))
-    # print(env.observation_space.shape[0], env.observation_space.shape[1])
     return env
 
 

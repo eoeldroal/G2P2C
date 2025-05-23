@@ -29,6 +29,13 @@ class Options:
                                  help='patient_id = [adolescent child adults] hence 0 - 9 indexes adolescents likewise')
         self.parser.add_argument('--sensor', type=str, default='GuardianRT', help='Dexcom, GuardianRT, Navigator')
         self.parser.add_argument('--pump', type=str, default='Insulet', help='Insulet, Cozmo')
+        self.parser.add_argument('--sim', type=str, default='simglucose',
+                                 help='simglucose | dmms')
+        self.parser.add_argument('--dmms_exe', type=str, default='', help='Path to DMMS.R executable')
+        self.parser.add_argument('--dmms_cfg', type=str, default='', help='Path to DMMS.R config XML')
+        self.parser.add_argument('--dmms_log', type=str, default='dmms_log.txt', help='DMMS.R log file')
+        self.parser.add_argument('--dmms_results', type=str, default='dmms_results', help='Output root directory')
+        self.parser.add_argument('--dmms_api_url', type=str, default='http://127.0.0.1:5000', help='FastAPI server URL')
 
         # for training: # ideal benchmark adult and adolescent doesnt have snacks though => set prob '-1' to remove
         self.parser.add_argument('--meal_prob', type=list, default=[0.95, -1, 0.95, -1, 0.95, -1], help='')
